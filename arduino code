@@ -1,0 +1,189 @@
+#include <Servo.h>
+#include <AFMotor.h>
+
+#define Echo A0
+#define Trig A1
+#define motorPin 10
+#define Speed 255  // Set speed for motors
+#define spoint 103  // Servo neutral position
+
+char value;
+int distance;
+int Left, Right;
+int L = 0, R = 0;
+
+Servo servo;
+AF_DCMotor M1(1);  // Motor 1
+AF_DCMotor M2(2);  // Motor 2
+AF_DCMotor M3(3);  // Motor 3
+AF_DCMotor M4(4);  // Motor 4
+
+unsigned long previousMillis = 0;  // Store the last time obstacle avoidance was checked
+unsigned long interval = 100;      // Interval for checking obstacles (in milliseconds)
+
+void setup() {
+  Serial.begin(9600);    // Start Bluetooth communication at 9600 baud rate
+  pinMode(Trig, OUTPUT); // Set Trig pin as output
+  pinMode(Echo, INPUT);  // Set Echo pin as input
+  
+  servo.attach(motorPin);  // Attach servo to motor pin
+  
+  // Initialize motor speeds
+  M1.setSpeed(Speed);
+  M2.setSpeed(Speed);
+  M3.setSpeed(Speed);
+  M4.setSpeed(Speed);
+}
+
+void loop() {
+  unsigned long currentMillis = millis();
+  
+  // 1. Always check for obstacles
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;  // Update the time
+    ObstacleAvoidance();  // Check for obstacles and react accordingly
+  }
+  
+  // 2. Check Bluetooth input and execute command if available
+  if (Serial.available() > 0) {
+    BluetoothControl();  // Process Bluetooth control if data is available
+  }
+}
+
+// BluetoothControl: Handle Bluetooth commands (move robot based on input)
+void BluetoothControl() {
+  value = Serial.read();  // Read the incoming Bluetooth command
+  Serial.println(value);  // Echo the command to serial monitor
+  
+  switch(value) {
+    case 'F': forward(); break;
+    case 'B': backward(); break;
+    case 'L': left(); break;
+    case 'R': right(); break;
+    case 'S': stop(); break;
+    default: break;
+  }
+}
+
+// ObstacleAvoidance: Avoid obstacles if detected
+void ObstacleAvoidance() {
+  distance = ultrasonic();  // Measure the distance using ultrasonic sensor
+  
+  if (distance <= 25) {  // If an obstacle is detected within 25 cm
+    stop();  // Stop all motors
+    backward();  // Move backward to avoid collision
+    delayWithoutBlocking(366);  // Move backward without blocking other operations
+    stop();  // Stop motors after moving backward
+
+    // Check left and right for clear path
+    L = leftsee();
+    servo.write(spoint);  // Return the servo to neutral position
+    delayWithoutBlocking(566);
+
+    R = rightsee();
+    servo.write(spoint);  // Return the servo to neutral position
+
+    // Decide whether to turn left or right based on the distances
+    if (L < R) {
+      left();  // Turn left
+      delayWithoutBlocking(366);  // Delay without blocking other tasks
+      stop();  // Stop after turning
+    } else if (L > R) {
+      right();  // Turn right
+      delayWithoutBlocking(366);  // Delay without blocking other tasks
+      stop();  // Stop after turning
+    } else {
+      // If both sides are blocked, reverse and rotate
+      backward();
+      delayWithoutBlocking(500);
+      stop();
+      left();
+      delayWithoutBlocking(500);
+      stop();
+    }
+  } else {
+    // No obstacles detected, continue moving forward
+    forward();
+  }
+}
+
+// Measure distance using the ultrasonic sensor.
+int ultrasonic() {
+  digitalWrite(Trig, LOW);   // Ensure Trig is LOW
+  delayMicroseconds(3);
+  digitalWrite(Trig, HIGH);  // Send pulse to trigger sensor
+  delayMicroseconds(10);
+  digitalWrite(Trig, LOW);   // Stop sending pulse
+  
+  long duration = pulseIn(Echo, HIGH);  // Read the duration of the pulse
+  int cm = duration / 58.2;  // Convert pulse duration to distance in cm
+  return cm;
+}
+
+// Move forward.
+void forward() {
+  setMotorDirection(FORWARD);
+}
+
+// Move backward.
+void backward() {
+  setMotorDirection(BACKWARD);
+}
+
+// Turn right.
+void right() {
+  M1.run(BACKWARD);
+  M2.run(BACKWARD);
+  M3.run(FORWARD);
+  M4.run(FORWARD);
+}
+
+// Turn left.
+void left() {
+  M1.run(FORWARD);
+  M2.run(FORWARD);
+  M3.run(BACKWARD);
+  M4.run(BACKWARD);
+}
+
+// Stop all motors.
+void stop() {
+  M1.run(RELEASE);
+  M2.run(RELEASE);
+  M3.run(RELEASE);
+  M4.run(RELEASE);
+}
+
+// Helper function to set motor direction for forward/backward.
+void setMotorDirection(int direction) {
+  M1.run(direction);
+  M2.run(direction);
+  M3.run(direction);
+  M4.run(direction);
+}
+
+// Measure distance on the left side by rotating the servo.
+int leftsee() {
+  servo.write(180);  // Rotate the servo to the left position
+  delay(200);  // Allow time for servo to position
+  int dist = ultrasonic();  // Measure distance
+  return dist;
+}
+
+// Measure distance on the right side by rotating the servo.
+int rightsee() {
+  servo.write(30);  // Rotate the servo to the right position
+  delay(200);  // Allow time for servo to position
+  int dist = ultrasonic();  // Measure distance
+  return dist;
+}
+
+// Non-blocking delay function to allow checks during delay periods
+void delayWithoutBlocking(unsigned long duration) {
+  unsigned long startMillis = millis();
+  while (millis() - startMillis < duration) {
+    if (Serial.available() > 0) {
+      BluetoothControl();  // Check if Bluetooth input is received during the delay
+    }
+  }
+}
