@@ -24,39 +24,37 @@ Arduino UNO board
          
 Step 2
 
-Secondly, cut the foam board piece as follows.
-How to make a multi-function Arduino robot
+Secondly, cut the foam boardinto 11x12 cm 
+
 Step 3
 
 Thirdly, glue the four gear motors to the foam board piece.
-How to make a multi-function Arduino robot
-How to make a multi-function Arduino robot
+
 Step 4
 
 Then, attach the motor shield to the Arduino board and glue it to the robot chassis.
 Step 5
 
-Next, dig two holes on either side of the Arduino board and insert the gear motor wire through these holes.
+Next, dig two holes on either side of the Arduino board and insert the gear motor wire through these holes.on the 12 cm side 
 Step 6
 
-Then, connect the motors to the motor driver shield. To do this, use the circuit diagram below.
-How to make a multi-function Arduino robot
-How to make a multi-function Arduino robot
+Then, connect the motors to the motor driver shield. To do this, just lan the driven on arduino by seeing the holes on uno and the pins on the driver just insert the driver pins on the uno holes 
+
 Step 7
 
-Afterward, attach the servo motor and ultrasonic sensor as follows.
+Afterward, stick the servo motor on the board and ultrasonic sensor on the servo using glue or doublr tape 
 Step 8
 
-Next, connect the servo motor and the ultrasonic sensor using the circuit diagram above.
+Next, connect the servo motor and the ultrasonic sensor 
 Step 9
 
 Then, connect the Bluetooth module to the motor driver shield and glue it to the robot chassis.
 Step 10
 
-After, glue the battery holder and connect it to the driver shield.
+After, glue the battery holder ont he board and connect it to the driver shield.
 Step 11
 
 Now, attach the robot wheels and put the batteries to the battery holder.
+step 12 
 
-
-now moving to the coding part, install arduino ide on your pc/laptop
+now moving to the coding part, install arduino ide on your pc/laptop and copy/paste the arduino code file that i`ve given 
